@@ -1,0 +1,372 @@
+"use client";
+import { currencyOptions, languageOptions } from "@/data/footer";
+
+import { socialLinks } from "@/data/socials";
+
+import React, { useEffect, useState } from "react";
+import { FiLogOut } from "react-icons/fi";
+import CartLength from "./components/CartLength";
+
+import { openCart } from "@/utlis/openCart";
+import MobileNav from "./components/MobileNav";
+import Image from "next/image";
+import Link from "next/link";
+import User from "./components/User";
+import { Autoplay, EffectFade, Navigation } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { slideData1000 } from "@/data/heroslides";
+import { useUser } from "../../context/UserContext";
+import { IoLocationOutline } from "react-icons/io5";
+import { IoReorderTwoSharp } from "react-icons/io5";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter, usePathname } from "../../i18n/routing";
+export default function MobileHeader() {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+      const t = useTranslations();
+
+   //  const pathname = usePathname();
+  
+      const { isLoggedIn } = useUser();
+
+  const [scrollDirection, setScrollDirection] = useState("down");
+
+  const [searchKeyWord, setSearchKeyWord] = useState("");
+
+
+  const handleChange = (event) => {
+    setSearchKeyWord(event.target.value);
+  };
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/";
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > 250) {
+        if (currentScrollY > lastScrollY.current) {
+          // Scrolling down
+          setScrollDirection("down");
+        } else {
+          // Scrolling up
+          setScrollDirection("up");
+        }
+      } else {
+        // Below 250px
+        setScrollDirection("down");
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    const lastScrollY = { current: window.scrollY };
+
+    // Add scroll event listener
+    window.addEventListener("scroll", handleScroll);
+
+    // Cleanup: remove event listener when component unmounts
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const handleLangChange = (e) => {
+    // console.log(pathname, e.target.value);
+    router.push(pathname, { locale: e.target.value });
+  };
+
+  const swiperOptions = {
+        autoplay: {
+            delay: 5000,
+        },
+        modules: [Autoplay, Navigation, EffectFade],
+        pagination: false,
+        slidesPerView: 1,
+        effect: "fade",
+        loop: true,
+    };
+
+  const onSearch = (event) => {
+    event.preventDefault();
+    window.location.href = `/${locale}/shop?q=${removeSpecialCharactersAndAmp(
+      searchKeyWord
+    )
+      .split(" ")
+      .join("-")}`;
+  };
+
+  function removeSpecialCharactersAndAmp(str) {
+    // Remove the specific word "&amp;"
+    let cleanedStr = str.replace(/&amp;/g, "");
+
+    // Remove all special characters
+    cleanedStr = cleanedStr.replace(/[^\w\s-]/g, "");
+
+    // Replace multiple spaces with a single space and trim
+    cleanedStr = cleanedStr.replace(/\s+/g, " ").trim();
+
+    return cleanedStr;
+  }
+
+  return (
+    <div
+      className={`header-mobile header_sticky ${
+        scrollDirection == "up" ? "header_sticky-active" : "position-relative"
+      } `}
+    >
+      <Swiper
+          className="swiper-container js-swiper-slider slideshow type4 slideshow-navigation-white-sm swiper-container-fade swiper-container-initialized swiper-container-horizontal swiper-container-pointer-events bg-black"
+          {...swiperOptions}
+          style={{ height: "2.5rem" }}
+      >
+          {slideData1000.map((elm, i) => (
+              <SwiperSlide
+                  key={i}
+                  style={{
+                      textTransform: "uppercase",
+                      fontSize: "12px",
+                  }}
+                  className="swiper-slide text-center"
+              >
+                  <div className="slideshow-text container position-absolute start-50 top-50 translate-middle">
+                      <Link
+                          href={`/${locale}/${elm.btnLink}`}
+                          className="animate animate_fade animate_btt animate_delay-5 lh-2rem text-white"
+                      >
+                          {t(
+                              elm.description
+                                  .split(" ")
+                                  .slice(0, 13)
+                                  .join(" ")
+                          )}
+                      </Link>
+                  </div>
+              </SwiperSlide>
+          ))}
+      </Swiper>
+      
+      <div className="container d-flex align-items-center h-100">
+        <Link className="mobile-nav-activator d-block position-relative" href="#">
+          <svg
+            className="nav-icon"
+            width="25"
+            height="18"
+            viewBox="0 0 25 18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <use href="#icon_nav" />
+          </svg>
+          <span className="btn-close-lg position-absolute top-0 start-0 w-100"></span>
+        </Link>
+
+        <div className="logo">
+          <a href="/">
+            <Image
+              src="/assets/images/about/ahmed-logo.png"
+              width={70}
+              height={70}
+              alt="Ahmed"
+              className=""
+            />
+          </a>
+        </div>
+        {/* <!-- /.logo --> */}
+
+        <a
+          onClick={() => openCart()}
+          className="header-tools__item header-tools__cart js-open-aside"
+        >
+          <svg
+            className="d-block"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <use href="#icon_cart" />
+          </svg>
+          <span className="cart-amount d-block position-absolute js-cart-items-count">
+            <CartLength />
+          </span>
+        </a>
+      </div>
+      {/* <!-- /.container --> */}
+
+      <nav className="header-mobile__navigation navigation d-flex flex-column w-100 position-absolute top-100 bg-body overflow-auto">
+        <div className="container">
+          <form
+            onSubmit={onSearch}
+            className="search-field position-relative mt-4 mb-3"
+          >
+            <div className="position-relative">
+              <input
+                className="search-field__input w-100 border rounded-1"
+                type="text"
+                name="search-keyword"
+                placeholder="Search products"
+                value={searchKeyWord}
+                onChange={handleChange}
+              />
+              <button
+                className="btn-icon search-popup__submit pb-0 me-2"
+                type="submit"
+              >
+                <svg
+                  className="d-block"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <use href="#icon_search" />
+                </svg>
+              </button>
+              <button
+                className="btn-icon btn-close-lg search-popup__reset pb-0 me-2"
+                type="reset"
+              ></button>
+            </div>
+
+            <div className="position-absolute start-0 top-100 m-0 w-100">
+              <div className="search-result"></div>
+            </div>
+          </form>
+          {/* <!-- /.header-search --> */}
+        </div>
+        {/* <!-- /.container --> */}
+
+        <div className="container">
+          <div className="overflow-hidden">
+            <ul className="navigation__list list-unstyled position-relative">
+              <MobileNav />
+            </ul>
+            {/* <!-- /.navigation__list --> */}
+          </div>
+          {/* <!-- /.overflow-hidden --> */}
+        </div>
+        {/* <!-- /.container --> */}
+
+        <div className="border-top mt-2 pb-2">
+          <div className="customer-links border-bottom container mt-2 mb-2 pb-2">
+            {/* <svg
+              className="d-inline-block align-middle"
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <use className="js-open-aside" href="#icon_user" />
+            </svg> */}
+            {!isLoggedIn ? (
+                <Link
+                    className="js-open-aside d-flex"
+                    href="#"
+                >
+                    <User />
+                    <span className="d-inline-block ms-2 text-uppercase align-middle fw-medium">
+                      My Account
+                    </span>
+                </Link>
+            ) : (
+                <Link href="#" onClick={handleLogout}>
+                    <FiLogOut size={20} /> Logout
+                </Link>
+            )}
+            
+          </div>
+          <div className="customer-links border-bottom container mt-2 mb-2 pb-2">
+          <Link href={`/${locale}/order-tracking`}>
+              <IoReorderTwoSharp size={20} />
+              <span className="d-inline-block ms-2 text-uppercase align-middle fw-medium">
+              Track Order
+            </span>
+          </Link>
+          </div>
+          <div className="customer-links border-bottom container mt-2 mb-2 pb-2">
+          <Link href={`/${locale}/store-locator`}>
+              <IoLocationOutline size={20} />
+              <span className="d-inline-block ms-2 text-uppercase align-middle fw-medium">
+              Find a store
+            </span>
+          </Link>
+          </div>
+      <div className="d-flex">
+          <div className="container d-flex align-items-center">
+            <label className="me-2 text-secondary">Language</label>
+            <select
+              className="form-select form-select-sm bg-transparent border-0"
+              aria-label="Default select example"
+              name="store-language"
+              value={locale}
+              onChange={handleLangChange}
+            >
+              {languageOptions.map((option, index) => (
+                <option
+                  key={index}
+                  className="footer-select__option"
+                  value={option.value}
+                >
+                  {option.text}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="container d-flex align-items-center">
+            <label className="me-2 text-secondary">Country</label>
+            <select
+              className="form-select form-select-sm bg-transparent border-0"
+              aria-label="Default select example"
+              name="store-language"
+              onChange={(e) => window.open(e.target.value,"_self")}
+            >
+              {currencyOptions.map((option, index) => (
+                <option
+                  key={index}
+                  className="footer-select__option"
+                  value={option.link}
+                >
+                  {option.text}
+                </option>
+              ))}
+            </select>
+          </div>
+          </div>
+          
+
+          <ul className="container social-links list-unstyled d-flex flex-wrap mb-0">
+            {socialLinks.map((link, index) => (
+              <li key={index}>
+                <Link
+                  href={link.href}
+                  className="footer__social-link d-block"
+                >
+                  <svg
+                    className={link.className}
+                    width={link.width}
+                    height={link.height}
+                    viewBox={link.viewBox}
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <use href={link.icon} />
+                  </svg>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
+      {/* <!-- /.navigation --> */}
+    </div>
+  );
+}
